@@ -2,4 +2,4 @@
 
 ## Build
 ### Part A
-To run program, `cd` into `/partA/` directory and run `python -m search`.
+To run program, run `python -m search` from current directory.
