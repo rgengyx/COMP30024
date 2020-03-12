@@ -1,11 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0ef2ac79-3e0e-4c17-ac80-1d4a1b4ed8f0" name="Default Changelist" comment="" />
+    <list default="true" id="0ef2ac79-3e0e-4c17-ac80-1d4a1b4ed8f0" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/.idea/2020-part-a-skeleton.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/2020-part-A-spec.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/2020-part-A-spec.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/search/__main__.py" beforeDir="false" afterPath="$PROJECT_DIR$/search/__main__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/partA/search/util.py" beforeDir="false" afterPath="$PROJECT_DIR$/search/util.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectId" id="1Z1Q6JEEvMruU963G5aeFFvE3HA" />
   <component name="ProjectViewState">
@@ -15,8 +31,14 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/partA" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
   </component>
   <component name="ServiceViewManager">
     <option name="viewStates">
@@ -41,6 +63,7 @@
       <option name="presentableId" value="Default" />
       <updated>1584003943272</updated>
       <workItem from="1584003945646" duration="54000" />
+      <workItem from="1584005116446" duration="218000" />
     </task>
     <servers />
   </component>
@@ -48,9 +71,9 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="743" y="290" width="424" height="484" key="FileChooserDialogImpl" timestamp="1584003998030">
+    <state x="743" y="290" width="424" height="484" key="FileChooserDialogImpl" timestamp="1584005330998">
       <screen x="0" y="27" width="1920" height="1012" />
     </state>
-    <state x="743" y="290" width="424" height="484" key="FileChooserDialogImpl/0.27.1920.1012@0.27.1920.1012" timestamp="1584003998030" />
+    <state x="743" y="290" width="424" height="484" key="FileChooserDialogImpl/0.27.1920.1012@0.27.1920.1012" timestamp="1584005330998" />
   </component>
 </project>
