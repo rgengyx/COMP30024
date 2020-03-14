@@ -76,42 +76,19 @@ def bfs_shortest_path(graph, start, end):
             queue.append(new_path)
 
 
-def find_destination_square(white, blacks):
+def find_destination_squares(white, blacks):
     """Return coordinate of square which is the optimal destination for white token to move to
     """
 
-    for black in blacks:
+    destination_squares = []
 
-        # List of other black tokens in surrounding 3x3 area of current black token
-        #
-        #    ├───┼───┼───┼
-        #    │{:}│{:}│{:}│
-        #    ├───┼───┼───┼
-        #    │{:}│   │{:}│
-        #    ├───┼───┼───┼
-        #    │{:}│{:}│{:}│
-        #    ├───┼───┼───┼
-        #
+    for black in blacks:
 
         blacks_in_3x3_surrounding_squares = [black3 for black3 in blacks for square in
                                              find_3x3_surrounding_squares(black[1:])
                                              if
                                              black3[1] == square[0] and black3[2] == square[1]]
         if not blacks_in_3x3_surrounding_squares:
-
-            # # List of other black tokens in surrounding 5x5 area of current black token
-            #
-            #    ├───┼───┼───┼───┼───┼
-            #    │{:}│{:}│{:}│{:}│{:}│
-            #    ├───┼───┼───┼───┼───┼
-            #    │{:}│{:}│{:}│{:}│{:}│
-            #    ├───┼───┼───┼───┼───┼
-            #    │{:}│{:}│   │{:}│{:}│
-            #    ├───┼───┼───┼───┼───┼
-            #    │{:}│{:}│{:}│{:}│{:}│
-            #    ├───┼───┼───┼───┼───┼
-            #    │{:}│{:}│{:}│{:}│{:}│
-            #    ├───┼───┼───┼───┼───┼
 
             blacks_in_5x5_surrounding_squares = [black5 for black5 in blacks for square in
                                                  find_5x5_surrounding_squares(black[1:]) if
@@ -123,7 +100,7 @@ def find_destination_square(white, blacks):
                 # Sign function, return either 1, 0, or -1
                 sign = lambda x: 1 if x > 0 else (-1 if x < 0 else 0)
 
-                return black[1] - sign(dx), black[2] - sign(dy)
+                destination_squares.append((black[1] - sign(dx), black[2] - sign(dy)))
             else:
                 # Case 2:
                 blacks_in_5x5_squares = blacks_in_5x5_surrounding_squares + [black]
@@ -132,7 +109,9 @@ def find_destination_square(white, blacks):
 
                 # Find tuple with most occurrence
                 most_common_square = collections.Counter(all_surrounding_squares).most_common()[0][0]
-                return most_common_square
+                destination_squares.append(most_common_square)
+
+    return destination_squares
 
 
 def find_adjacent_squares(coordinate):
@@ -140,6 +119,18 @@ def find_adjacent_squares(coordinate):
     :param coordinate: (x, y)
     :type: tuple
     """
+
+    # List of other coordinates in adjacent squares
+    #
+    #    ├───┼───┼───┼
+    #    │   │{:}│   │
+    #    ├───┼───┼───┼
+    #    │{:}│   │{:}│
+    #    ├───┼───┼───┼
+    #    │   │{:}│   │
+    #    ├───┼───┼───┼
+    #
+
     x, y = coordinate[0], coordinate[1]
     return [(i, j) for i in [x - 1, x, x + 1] for j in [y - 1, y, y + 1] if
             i >= 0 and j >= 0 and (i, j) != (x, y) and (i == x or j == y)]
@@ -150,6 +141,18 @@ def find_3x3_surrounding_squares(coordinate):
     :param coordinate: (x, y)
     :type: tuple
     """
+
+    # List of coordinates in surrounding 3x3 squares
+    #
+    #    ├───┼───┼───┼
+    #    │{:}│{:}│{:}│
+    #    ├───┼───┼───┼
+    #    │{:}│   │{:}│
+    #    ├───┼───┼───┼
+    #    │{:}│{:}│{:}│
+    #    ├───┼───┼───┼
+    #
+
     x, y = coordinate[0], coordinate[1]
     return [(i, j) for i in [x - 1, x, x + 1] for j in [y - 1, y, y + 1] if i >= 0 and j >= 0 and (i, j) != (x, y)]
 
@@ -159,6 +162,21 @@ def find_5x5_surrounding_squares(coordinate):
     :param coordinate: (x, y)
     :type: tuple
     """
+
+    # # List of coordinates in surrounding 5x5 squares
+    #
+    #    ├───┼───┼───┼───┼───┼
+    #    │{:}│{:}│{:}│{:}│{:}│
+    #    ├───┼───┼───┼───┼───┼
+    #    │{:}│{:}│{:}│{:}│{:}│
+    #    ├───┼───┼───┼───┼───┼
+    #    │{:}│{:}│   │{:}│{:}│
+    #    ├───┼───┼───┼───┼───┼
+    #    │{:}│{:}│{:}│{:}│{:}│
+    #    ├───┼───┼───┼───┼───┼
+    #    │{:}│{:}│{:}│{:}│{:}│
+    #    ├───┼───┼───┼───┼───┼
+
     x, y = coordinate[0], coordinate[1]
     return [(i, j) for i in [x - 2, x - 1, x, x + 1, x + 2] for j in [y - 2, y - 1, y, y + 1, y + 2] if
             i >= 0 and j >= 0 and
@@ -183,16 +201,18 @@ def run_case(data):
     :type data: Dictionary
     """
 
-    white, blacks = data['white'][0], data['black']
-    destination_square = find_destination_square(white, blacks)
-
+    # Initialise adjacency list
     squares = generate_all_available_squares(data)
     adjacency_list = generate_adjacency_list(squares)
 
-    start = tuple(white[1:])
-    end = destination_square
-    shortest_path = bfs_shortest_path(adjacency_list, start, end)
-    print_actions(white, shortest_path)
+    whites, blacks = data['white'], data['black']
+    destination_squares = find_destination_squares(whites[0], blacks)
+
+    for i in range(len(destination_squares)):
+        start = tuple(whites[i][1:])
+        end = destination_squares[i]
+        shortest_path = bfs_shortest_path(adjacency_list, start, end)
+        print_actions(whites[i], shortest_path)
 
 
 def main():
