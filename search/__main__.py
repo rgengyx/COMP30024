@@ -1,12 +1,14 @@
 import sys
 import json
 import collections
+import itertools
+from collections import deque
 
 from search.util import print_move, print_boom, print_board
 
 
-def generate_all_available_squares(data):
-    """ Return a list of squares that white tokens can move to
+def generate_all_empty_squares(data):
+    """ Return a list of square coordinates that white tokens can move to
     :param data: JSON input
     :type data: Dictionary
     """
@@ -34,7 +36,7 @@ def generate_all_available_squares(data):
     return squares
 
 
-def generate_adjacency_list(squares):
+def generate_adjacency_list(squares, direction_func):
     """Return a dictionary of adjacency list
     :param squares: list of square coordinates
     :type squares: list
@@ -44,74 +46,10 @@ def generate_adjacency_list(squares):
     for current_square in squares:
         adjacency_list[current_square] = []
         for other_square in squares:
-            if other_square != current_square and other_square in find_adjacent_squares(current_square):
+            if other_square != current_square and other_square in direction_func(current_square):
                 adjacency_list[current_square].append(other_square)
 
     return adjacency_list
-
-
-def bfs_shortest_path(graph, start, end):
-    """Return shortest path from start to end in form of a list of coordinates
-    :param graph: dictionary of adjacency list
-    :param start: coordinate (x, y)
-    :param end: coordinate (x, y)
-    """
-
-    # maintain a queue of paths
-    queue = []
-    # push the first path into the queue
-    queue.append([start])
-    while queue:
-        # get the first path from the queue
-        path = queue.pop(0)
-        # get the last node from the path
-        node = path[-1]
-        # path found
-        if node == end:
-            return path
-        # enumerate all adjacent nodes, construct a new path and push it into the queue
-        for adjacent in graph.get(node, []):
-            new_path = list(path)
-            new_path.append(adjacent)
-            queue.append(new_path)
-
-
-def find_destination_squares(white, blacks):
-    """Return coordinate of square which is the optimal destination for white token to move to
-    """
-
-    destination_squares = []
-
-    for black in blacks:
-
-        blacks_in_3x3_surrounding_squares = [black3 for black3 in blacks for square in
-                                             find_3x3_surrounding_squares(black[1:])
-                                             if
-                                             black3[1] == square[0] and black3[2] == square[1]]
-        if not blacks_in_3x3_surrounding_squares:
-
-            blacks_in_5x5_surrounding_squares = [black5 for black5 in blacks for square in
-                                                 find_5x5_surrounding_squares(black[1:]) if
-                                                 black5[1] == square[0] and black5[2] == square[1]]
-            if not blacks_in_5x5_surrounding_squares:
-                # Case 1:
-                dx, dy = black[1] - white[1], black[2] - white[2]
-
-                # Sign function, return either 1, 0, or -1
-                sign = lambda x: 1 if x > 0 else (-1 if x < 0 else 0)
-
-                destination_squares.append((black[1] - sign(dx), black[2] - sign(dy)))
-            else:
-                # Case 2:
-                blacks_in_5x5_squares = blacks_in_5x5_surrounding_squares + [black]
-                all_surrounding_squares = [square for b in blacks_in_5x5_squares for square in
-                                           find_3x3_surrounding_squares(b[1:])]
-
-                # Find tuple with most occurrence
-                most_common_square = collections.Counter(all_surrounding_squares).most_common()[0][0]
-                destination_squares.append(most_common_square)
-
-    return destination_squares
 
 
 def find_adjacent_squares(coordinate):
@@ -168,11 +106,11 @@ def find_5x5_surrounding_squares(coordinate):
     #    ├───┼───┼───┼───┼───┼
     #    │{:}│{:}│{:}│{:}│{:}│
     #    ├───┼───┼───┼───┼───┼
-    #    │{:}│{:}│{:}│{:}│{:}│
+    #    │{:}│   │   │   │{:}│
     #    ├───┼───┼───┼───┼───┼
-    #    │{:}│{:}│   │{:}│{:}│
+    #    │{:}│   │   │   │{:}│
     #    ├───┼───┼───┼───┼───┼
-    #    │{:}│{:}│{:}│{:}│{:}│
+    #    │{:}│   │   │   │{:}│
     #    ├───┼───┼───┼───┼───┼
     #    │{:}│{:}│{:}│{:}│{:}│
     #    ├───┼───┼───┼───┼───┼
@@ -180,7 +118,73 @@ def find_5x5_surrounding_squares(coordinate):
     x, y = coordinate[0], coordinate[1]
     return [(i, j) for i in [x - 2, x - 1, x, x + 1, x + 2] for j in [y - 2, y - 1, y, y + 1, y + 2] if
             i >= 0 and j >= 0 and
-            (i, j) != (x, y)]
+            (i, j) != (x, y) and ((i, j) not in find_3x3_surrounding_squares((x, y)))]
+
+
+def bfs_shortest_path(graph, start, end):
+    """Return shortest path from start to end in form of a list of coordinates
+    :param graph: dictionary of adjacency list
+    :param start: coordinate (x, y)
+    :param end: coordinate (x, y)
+    """
+
+    # maintain a queue of paths
+    queue = []
+    # push the first path into the queue
+    queue.append([start])
+    while queue:
+        # get the first path from the queue
+        path = queue.pop(0)
+        # get the last node from the path
+        node = path[-1]
+        # path found
+        if node == end:
+            return path
+        # enumerate all adjacent nodes, construct a new path and push it into the queue
+        for adjacent in graph.get(node, []):
+            new_path = list(path)
+            new_path.append(adjacent)
+            queue.append(new_path)
+
+
+def connected_components(graph):
+    """Return a list of connected black tokens. e.g. [[(0, 2), (1, 1), (2, 0)], [(4, 7)], [(7, 7)]]
+    """
+    seen = set()
+
+    for root in graph.keys():
+        if root not in seen:
+            seen.add(root)
+            component = []
+            queue = deque([root])
+            while queue:
+                node = queue.popleft()
+                component.append(node)
+                for neighbor in graph[node]:
+                    if neighbor not in seen:
+                        seen.add(neighbor)
+                        queue.append(neighbor)
+            yield component
+
+
+def find_explosion_break_point(components):
+    black_coordinates = list(itertools.chain.from_iterable(components))
+
+    def find_index_of_list_coordinate_is_in(nested_list, coordinate):
+        for list in nested_list:
+            if coordinate in list:
+                return nested_list.index(list)
+
+    explosion_break_points = set()
+    for current in black_coordinates:
+        for other in black_coordinates:
+            if other not in components[
+                find_index_of_list_coordinate_is_in(components, current)] and other in find_5x5_surrounding_squares(
+                current):
+                x, y = int((other[0] + current[0]) / 2), int((other[1] + current[1]) / 2)
+                explosion_break_points.add((x, y))
+
+    return list(explosion_break_points)
 
 
 def print_actions(white, path):
@@ -201,18 +205,41 @@ def run_case(data):
     :type data: Dictionary
     """
 
-    # Initialise adjacency list
-    squares = generate_all_available_squares(data)
-    adjacency_list = generate_adjacency_list(squares)
-
     whites, blacks = data['white'], data['black']
-    destination_squares = find_destination_squares(whites[0], blacks)
 
-    for i in range(len(destination_squares)):
-        start = tuple(whites[i][1:])
-        end = destination_squares[i]
-        shortest_path = bfs_shortest_path(adjacency_list, start, end)
-        print_actions(whites[i], shortest_path)
+    # Initialise adjacency lists
+    empty_squares = generate_all_empty_squares(data)
+    whites_adjacency_list = generate_adjacency_list(empty_squares, find_adjacent_squares)
+    black_coordinates = [tuple(black[1:]) for black in blacks]
+    blacks_adjacency_list = generate_adjacency_list(black_coordinates,
+                                                    find_3x3_surrounding_squares)
+
+    # Find connected components of blacks
+    components = list(connected_components(blacks_adjacency_list))
+
+    if len(components) <= len(whites):
+        # This can be optimised as whites are selected in predetermined order.
+        for i in range(len(components)):
+            surrounding_coordinates = [surrounding_coordinate for coordinate in components[i] for surrounding_coordinate
+                                       in
+                                       find_3x3_surrounding_squares(coordinate) if
+                                       surrounding_coordinate not in black_coordinates]
+
+            # This can be optimised as the first surrounding coordinate is always selected.
+            start = tuple(whites[i][1:])
+            end = surrounding_coordinates[0]
+            shortest_path = bfs_shortest_path(whites_adjacency_list, start, end)
+            print_actions(whites[i], shortest_path)
+    else:
+        break_points = find_explosion_break_point(components)
+        for i in range(len(break_points)):
+            start = tuple(whites[i][1:])
+            end = break_points[i]
+            shortest_path = bfs_shortest_path(whites_adjacency_list, start, end)
+            print_actions(whites[i], shortest_path)
+
+        for j in range(i+1, len(whites)):
+            print("extra")
 
 
 def main():
