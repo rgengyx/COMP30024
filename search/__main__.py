@@ -14,7 +14,6 @@ def generate_all_empty_squares(data):
     """
 
     def check_if_coordinates_exist_in_tokens(tokens, coordinate):
-
         """Return True if a token is already in a coordinate False otherwise
         """
 
@@ -168,23 +167,30 @@ def connected_components(graph):
 
 
 def find_explosion_break_point(components):
-    black_coordinates = list(itertools.chain.from_iterable(components))
+    """
+    """
+    black_coordinates = list(itertools.chain.from_iterable(components.values()))
 
-    def find_index_of_list_coordinate_is_in(nested_list, coordinate):
-        for list in nested_list:
-            if coordinate in list:
-                return nested_list.index(list)
+    def find_index_of_list_coordinate_is_in(cps, coordinate):
+        for l in cps.values():
+            if coordinate in l:
+                return list(cps.values()).index(l)
 
     explosion_break_points = set()
+    exploded_components = set()
     for current in black_coordinates:
         for other in black_coordinates:
             if other not in components[
                 find_index_of_list_coordinate_is_in(components, current)] and other in find_5x5_surrounding_squares(
                 current):
+                # The is an explosion break point
                 x, y = int((other[0] + current[0]) / 2), int((other[1] + current[1]) / 2)
                 explosion_break_points.add((x, y))
 
-    return list(explosion_break_points)
+                exploded_components.add(find_index_of_list_coordinate_is_in(components, current))
+                exploded_components.add(find_index_of_list_coordinate_is_in(components, other))
+
+    return list(explosion_break_points), list(exploded_components)
 
 
 def print_actions(white, path):
@@ -215,31 +221,33 @@ def run_case(data):
                                                     find_3x3_surrounding_squares)
 
     # Find connected components of blacks
-    components = list(connected_components(blacks_adjacency_list))
+    components = dict(zip(itertools.count(), connected_components(blacks_adjacency_list)))
 
-    if len(components) <= len(whites):
-        # This can be optimised as whites are selected in predetermined order.
-        for i in range(len(components)):
-            surrounding_coordinates = [surrounding_coordinate for coordinate in components[i] for surrounding_coordinate
-                                       in
-                                       find_3x3_surrounding_squares(coordinate) if
-                                       surrounding_coordinate not in black_coordinates]
+    # Start whites actions
+    break_points, exploded_components = find_explosion_break_point(components)
 
-            # This can be optimised as the first surrounding coordinate is always selected.
-            start = tuple(whites[i][1:])
-            end = surrounding_coordinates[0]
-            shortest_path = bfs_shortest_path(whites_adjacency_list, start, end)
-            print_actions(whites[i], shortest_path)
-    else:
-        break_points = find_explosion_break_point(components)
-        for i in range(len(break_points)):
-            start = tuple(whites[i][1:])
-            end = break_points[i]
-            shortest_path = bfs_shortest_path(whites_adjacency_list, start, end)
-            print_actions(whites[i], shortest_path)
+    for exploded_component in exploded_components:
+        del components[exploded_component]
 
-        for j in range(i+1, len(whites)):
-            print("extra")
+    for i in range(len(break_points)):
+        start = tuple(whites[i][1:])
+        end = break_points[i]
+        shortest_path = bfs_shortest_path(whites_adjacency_list, start, end)
+        print_actions(whites[i], shortest_path)
+
+    # This can be optimised as whites are selected in predetermined order.
+    for i in range(len(components)):
+        surrounding_coordinates = [surrounding_coordinate for coordinate in components[i] for
+                                   surrounding_coordinate
+                                   in
+                                   find_3x3_surrounding_squares(coordinate) if
+                                   surrounding_coordinate not in black_coordinates]
+
+        # This can be optimised as the first surrounding coordinate is always selected.
+        start = tuple(whites[i][1:])
+        end = surrounding_coordinates[0]
+        shortest_path = bfs_shortest_path(whites_adjacency_list, start, end)
+        print_actions(whites[i], shortest_path)
 
 
 def main():
