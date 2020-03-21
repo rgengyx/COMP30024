@@ -7,32 +7,33 @@ from collections import deque
 from search.util import print_move, print_boom, print_board
 
 
+def generate_all_squares_on_board():
+    """ Return all squares on the board
+    """
+    return [(i, j) for i in range(8) for j in range(8)]
+
+
 def generate_all_empty_squares(data):
-    """ Return a list of square coordinates that white tokens can move to
+    """ Return squares that white tokens can move to
     :param data: JSON input
     :type data: Dictionary
     """
 
-    def check_if_coordinates_exist_in_tokens(tokens, coordinate):
-        """Return True if a token is already in a coordinate False otherwise
-        """
-
+    def token_exist_in_square(tokens, square):
         for token in tokens:
-            if token[1] == coordinate[0] and token[2] == coordinate[1]:
+            if token[1] == square[0] and token[2] == square[1]:
                 return True
         return False
 
-    squares = []
-    for i in range(8):
-        for j in range(8):
-            coordinate = (i, j)
-            blacks = data['black']
-            if check_if_coordinates_exist_in_tokens(blacks, coordinate):
-                continue
-            else:
-                squares.append(coordinate)
+    all_squares_on_board = generate_all_squares_on_board()
+    blacks = data["black"]
+    empty_squares = []
+    for square in all_squares_on_board:
+        if token_exist_in_square(blacks, square):
+            continue
+        empty_squares.append(square)
 
-    return squares
+    return empty_squares
 
 
 def generate_adjacency_list(squares, direction_func):
@@ -166,33 +167,6 @@ def connected_components(graph):
             yield component
 
 
-def find_explosion_break_point(components):
-    """
-    """
-    black_coordinates = list(itertools.chain.from_iterable(components.values()))
-
-    def find_index_of_list_coordinate_is_in(cps, coordinate):
-        for l in cps.values():
-            if coordinate in l:
-                return list(cps.values()).index(l)
-
-    explosion_break_points = set()
-    exploded_components = set()
-    for current in black_coordinates:
-        for other in black_coordinates:
-            if other not in components[
-                find_index_of_list_coordinate_is_in(components, current)] and other in find_5x5_surrounding_squares(
-                current):
-                # The is an explosion break point
-                x, y = int((other[0] + current[0]) / 2), int((other[1] + current[1]) / 2)
-                explosion_break_points.add((x, y))
-
-                exploded_components.add(find_index_of_list_coordinate_is_in(components, current))
-                exploded_components.add(find_index_of_list_coordinate_is_in(components, other))
-
-    return list(explosion_break_points), list(exploded_components)
-
-
 def print_actions(white, path):
     """Print move and boom actions from a given path to standard output
     :param path: list of (x, y)
@@ -205,6 +179,37 @@ def print_actions(white, path):
     print_boom(path[i + 1][0], path[i + 1][1])
 
 
+def board(data):
+    whites, blacks = data['white'], data['black']
+
+    board_dict = dict()
+
+    for white in whites:
+        if white[0] > 1:
+            board_dict[tuple(white[1:])] = "W" + str(white[0])
+        else:
+            board_dict[tuple(white[1:])] = "W"
+
+    for black in blacks:
+
+        if black[0] > 1:
+            board_dict[tuple(black[1:])] = "B" + str(black[0])
+        else:
+            board_dict[tuple(black[1:])] = "B"
+
+    print_board(board_dict)
+
+
+def get_3x3_surrounding_tokens(tokens, squares):
+    _3x3_surrounding_tokens = []
+    for square in squares:
+        for token in tokens:
+            if token[1] == square[0] and token[2] == square[1]:
+                _3x3_surrounding_tokens.append(token)
+                continue
+    return _3x3_surrounding_tokens
+
+
 def run_case(data):
     """ Run simulation
     :param data: JSON input
@@ -213,39 +218,60 @@ def run_case(data):
 
     whites, blacks = data['white'], data['black']
 
-    # Initialise adjacency lists
     empty_squares = generate_all_empty_squares(data)
     whites_adjacency_list = generate_adjacency_list(empty_squares, find_adjacent_squares)
-    black_coordinates = [tuple(black[1:]) for black in blacks]
-    blacks_adjacency_list = generate_adjacency_list(black_coordinates,
-                                                    find_3x3_surrounding_squares)
 
-    # Find connected components of blacks
-    components = dict(zip(itertools.count(), connected_components(blacks_adjacency_list)))
+    def get_exploded_tokens(coordinate, exploded_blacks):
+        _3x3_surrounding_tokens = get_3x3_surrounding_tokens(blacks, find_3x3_surrounding_squares(coordinate))
+        if not _3x3_surrounding_tokens:
+            return
 
-    # Start whites actions
-    break_points, exploded_components = find_explosion_break_point(components)
+        for token in _3x3_surrounding_tokens:
+            if token not in exploded_blacks:
+                exploded_blacks.append(token)
+                coordinate = tuple(token[1:])
+                get_exploded_tokens(coordinate, exploded_blacks)
 
-    for exploded_component in exploded_components:
-        del components[exploded_component]
+    # exploded_whites = []
+    explode_dict = {}
+    for empty_square in empty_squares:
+        exploded_blacks = []
+        get_exploded_tokens(empty_square, exploded_blacks)
+        explode_dict[empty_square] = exploded_blacks
+        # print(empty_square, exploded_blacks)
 
-    for i in range(len(break_points)):
-        start = tuple(whites[i][1:])
-        end = break_points[i]
-        shortest_path = bfs_shortest_path(whites_adjacency_list, start, end)
-        print_actions(whites[i], shortest_path)
+    # Recursively finding the destinations
+    def rec(exploded_blacks, destinations, n, destinations_list):
 
-    # This can be optimised as whites are selected in predetermined order.
-    for i in range(len(components)):
-        surrounding_coordinates = [surrounding_coordinate for coordinate in components[i] for
-                                   surrounding_coordinate
-                                   in
-                                   find_3x3_surrounding_squares(coordinate) if
-                                   surrounding_coordinate not in black_coordinates]
+        # if len(exploded_blacks) == len(blacks):
+        #     print(destinations, n)
+        #     return destinations
 
+        if n >= 1:
+
+            for empty_square in empty_squares:
+                exploded_blacks_tmp = exploded_blacks.copy()
+                for black in explode_dict[empty_square]:
+                    if black not in exploded_blacks:
+                        exploded_blacks_tmp.append(black)
+                # if rec(exploded_blacks_tmp, destinations + [empty_square], n - 1) is not None:
+                # print(len(rec(exploded_blacks_tmp, destinations + [empty_square], n - 1)) == len(blacks))
+                if len(rec(exploded_blacks_tmp, destinations + [empty_square], n - 1, destinations_list)) == len(blacks):
+                    destinations_list.append(destinations+[empty_square])
+                    return destinations + [empty_square]
+            return exploded_blacks
+        else:
+            return exploded_blacks
+
+    destinations = []
+    destinations_list = []
+    rec([], destinations, len(whites), destinations_list)
+
+    destinations = destinations_list[0]
+    for i in range(len(destinations)):
         # This can be optimised as the first surrounding coordinate is always selected.
         start = tuple(whites[i][1:])
-        end = surrounding_coordinates[0]
+        end = destinations[i]
         shortest_path = bfs_shortest_path(whites_adjacency_list, start, end)
         print_actions(whites[i], shortest_path)
 
@@ -255,6 +281,7 @@ def main():
         data = json.load(file)
 
     # TODO: find and print winning action sequence
+    board(data)
     run_case(data)
 
 
