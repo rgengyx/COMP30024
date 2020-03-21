@@ -128,6 +128,7 @@ def bfs_shortest_path(graph, start, end):
     :param end: coordinate (x, y)
     """
 
+    # https://stackoverflow.com/questions/8922060/how-to-trace-the-path-in-a-breadth-first-search
     # maintain a queue of paths
     queue = []
     # push the first path into the queue
@@ -150,6 +151,8 @@ def bfs_shortest_path(graph, start, end):
 def connected_components(graph):
     """Return a list of connected black tokens. e.g. [[(0, 2), (1, 1), (2, 0)], [(4, 7)], [(7, 7)]]
     """
+
+    # https://stackoverflow.com/questions/10301000/python-connected-components
     seen = set()
 
     for root in graph.keys():
