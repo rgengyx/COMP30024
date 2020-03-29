@@ -67,7 +67,6 @@ def find_adjacent_squares(coordinate):
     #    ├───┼───┼───┼
     #    │   │{:}│   │
     #    ├───┼───┼───┼
-    #
 
     x, y = coordinate[0], coordinate[1]
     return [(i, j) for i in [x - 1, x, x + 1] for j in [y - 1, y, y + 1] if
@@ -224,43 +223,49 @@ def run_case(data):
     empty_squares = generate_all_empty_squares(data)
     whites_adjacency_list = generate_adjacency_list(empty_squares, find_adjacent_squares)
 
-    def get_exploded_tokens(coordinate, exploded_blacks):
-        _3x3_surrounding_tokens = get_3x3_surrounding_tokens(blacks, find_3x3_surrounding_squares(coordinate))
-        if not _3x3_surrounding_tokens:
+    def get_exploded_tokens(coordinate, exploded_tokens):
+        _3x3_surrounding_white_tokens = get_3x3_surrounding_tokens(whites, find_3x3_surrounding_squares(coordinate))
+        _3x3_surrounding_black_tokens = get_3x3_surrounding_tokens(blacks, find_3x3_surrounding_squares(coordinate))
+
+        if not _3x3_surrounding_black_tokens:
             return
 
-        for token in _3x3_surrounding_tokens:
-            if token not in exploded_blacks:
-                exploded_blacks.append(token)
+        for token in _3x3_surrounding_black_tokens:
+            if token not in exploded_tokens['blacks']:
+                exploded_tokens['blacks'].append(token)
                 coordinate = tuple(token[1:])
-                get_exploded_tokens(coordinate, exploded_blacks)
+                get_exploded_tokens(coordinate, exploded_tokens)
+        for token in _3x3_surrounding_white_tokens:
+            if token not in exploded_tokens['whites']:
+                exploded_tokens['whites'].append(token)
+                coordinate = tuple(token[1:])
+                get_exploded_tokens(coordinate, exploded_tokens)
 
-    # exploded_whites = []
     explode_dict = {}
     for empty_square in empty_squares:
-        exploded_blacks = []
-        get_exploded_tokens(empty_square, exploded_blacks)
-        explode_dict[empty_square] = exploded_blacks
-        # print(empty_square, exploded_blacks)
+        exploded_tokens = {"blacks": [], "whites": []}
+        get_exploded_tokens(empty_square, exploded_tokens)
+        explode_dict[empty_square] = exploded_tokens
+        # print(empty_square, exploded_tokens)
 
-    # Recursively finding the destinations
-    def rec(exploded_blacks, destinations, n, destinations_list):
-
-        # if len(exploded_blacks) == len(blacks):
-        #     print(destinations, n)
-        #     return destinations
-
+    # Recursively finding the destinations whites will move to
+    def find_destinations(exploded_blacks, exploded_whites, destinations, n, destinations_list):
         if n >= 1:
-
             for empty_square in empty_squares:
                 exploded_blacks_tmp = exploded_blacks.copy()
-                for black in explode_dict[empty_square]:
+                exploded_whites_tmp = exploded_whites.copy()
+                token_dict = explode_dict[empty_square]
+                for black in token_dict['blacks']:
                     if black not in exploded_blacks:
                         exploded_blacks_tmp.append(black)
-                # if rec(exploded_blacks_tmp, destinations + [empty_square], n - 1) is not None:
-                # print(len(rec(exploded_blacks_tmp, destinations + [empty_square], n - 1)) == len(blacks))
-                if len(rec(exploded_blacks_tmp, destinations + [empty_square], n - 1, destinations_list)) == len(blacks):
-                    destinations_list.append(destinations+[empty_square])
+
+                for white in token_dict['whites']:
+                    if white not in exploded_whites:
+                        exploded_whites_tmp.append(white)
+
+                if len(find_destinations(exploded_blacks_tmp, exploded_whites_tmp, destinations + [empty_square],
+                                         n - 1 - len(exploded_whites_tmp), destinations_list)) == len(blacks):
+                    destinations_list.append(destinations + [empty_square])
                     return destinations + [empty_square]
             return exploded_blacks
         else:
@@ -268,11 +273,9 @@ def run_case(data):
 
     destinations = []
     destinations_list = []
-    rec([], destinations, len(whites), destinations_list)
-
+    find_destinations([], [], destinations, len(whites), destinations_list)
     destinations = destinations_list[0]
     for i in range(len(destinations)):
-        # This can be optimised as the first surrounding coordinate is always selected.
         start = tuple(whites[i][1:])
         end = destinations[i]
         shortest_path = bfs_shortest_path(whites_adjacency_list, start, end)
