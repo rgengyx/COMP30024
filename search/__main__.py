@@ -238,7 +238,7 @@ def print_move_actions(white, path):
 
     for i in range(len(path) - 1):
         n = 1
-        if (abs(path[i][1] - path[i+1][1]) + abs(path[i][2] - path[i + 1][2])) > 1:
+        if (abs(path[i][1] - path[i + 1][1]) + abs(path[i][2] - path[i + 1][2])) > 1:
             n = int(white[0][1:]) - 1
         print_move(n, path[i][1], path[i][2], path[i + 1][1], path[i + 1][2])
 
@@ -312,6 +312,29 @@ def run_case(data):
         get_exploded_tokens(non_black_square[1:], exploded_tokens)
         explode_dict[non_black_square] = exploded_tokens
 
+    # # Recursively finding the destinations whites will move to
+    # def find_destinations(exploded_blacks, exploded_whites, destinations, n, destinations_list):
+    #     if n >= 1:
+    #         for empty_square in emptys:
+    #             exploded_blacks_tmp = exploded_blacks.copy()
+    #             exploded_whites_tmp = exploded_whites.copy()
+    #             token_dict = explode_dict[empty_square]
+    #             for black in token_dict['blacks']:
+    #                 if black not in exploded_blacks:
+    #                     exploded_blacks_tmp.append(black)
+    #
+    #             for white in token_dict['whites']:
+    #                 if white not in exploded_whites:
+    #                     exploded_whites_tmp.append(white)
+    #
+    #             if len(find_destinations(exploded_blacks_tmp, exploded_whites_tmp, destinations + [empty_square],
+    #                                      n - 1 - len(exploded_whites_tmp), destinations_list)) == len(blacks):
+    #                 destinations_list.append(destinations + [empty_square])
+    #                 return destinations + [empty_square]
+    #         return exploded_blacks
+    #     else:
+    #         return exploded_blacks
+
     # Recursively finding the destinations whites will move to
     def find_destinations(exploded_blacks, exploded_whites, destinations, n, destinations_list):
         if n >= 1:
@@ -322,11 +345,9 @@ def run_case(data):
                 for black in token_dict['blacks']:
                     if black not in exploded_blacks:
                         exploded_blacks_tmp.append(black)
-
-                for white in token_dict['whites']:
-                    if white not in exploded_whites:
-                        exploded_whites_tmp.append(white)
-
+                for exploded_white in token_dict['whites']:
+                    if exploded_white != whites[len(whites) - n] and exploded_white not in exploded_whites:
+                        exploded_whites_tmp.append(exploded_white)
                 if len(find_destinations(exploded_blacks_tmp, exploded_whites_tmp, destinations + [empty_square],
                                          n - 1 - len(exploded_whites_tmp), destinations_list)) == len(blacks):
                     destinations_list.append(destinations + [empty_square])
@@ -339,33 +360,45 @@ def run_case(data):
     destinations_list = []
     find_destinations([], [], destinations, len(whites), destinations_list)
     destinations = destinations_list[0]
-    trapped_whites = []
+
+    # Determine if the whites are trapped
+    reachable = {}
     for i in range(len(destinations)):
+        for white in whites:
+            start = tuple(white)
+            end = destinations[i]
 
-        white = whites[i]
-        start = tuple(white)
-        end = destinations[i]
+            whites_adjacency_list = generate_adjacency_list(white, layout, find_adjacent_squares)
 
-        whites_adjacency_list = generate_adjacency_list(white, layout, find_adjacent_squares)
+            # Check if end is accessible
+            if end in dfs(whites_adjacency_list, start):
+                if white not in reachable.keys():
+                    reachable[white] = [end]
+                else:
+                    reachable[white].append(end)
+            else:
+                reachable[white] = []
 
-        # Check if end is accessible
-        if end in dfs(whites_adjacency_list, start):
-            shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
-            print_move_actions(white, shortest_path)
-            print_boom(end[1], end[2])
-        else:
-            trapped_whites.append(white)
+    reachable_copy = reachable.copy()
+    for i in range(len(destinations)):
+        for k, v in reachable_copy.items():
+            if destinations[i] in v:
+                reachable_copy.pop(k)
+                break
 
-    if trapped_whites == []:
+    if reachable_copy == {}:
         return
 
     # Take care of the trapped ones
-    trapped_whites_copy = trapped_whites.copy()
+    # Stacking
+    trapped_whites = whites.copy()
+    trapped_whites_copy = whites.copy()
+    layout_copy = layout.copy()
     for i in range(len(trapped_whites)):
         for j in range(i + 1, len(trapped_whites)):
             start = trapped_whites[i]
             end = trapped_whites[j]
-            whites_adjacency_list = generate_adjacency_list(start, layout, find_adjacent_squares)
+            whites_adjacency_list = generate_adjacency_list(start, layout_copy, find_adjacent_squares)
             if end in dfs(whites_adjacency_list, start):
                 shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
                 print_move_actions(start, shortest_path)
@@ -377,13 +410,13 @@ def run_case(data):
                 layout.append(("E", trapped_whites[i][1], trapped_whites[i][2]))
                 layout.remove(trapped_whites[j])
                 layout.append(moved)
-                trapped_whites[j] = moved
+                # trapped_whites[j] = moved
                 trapped_whites_copy[j] = moved
                 trapped_whites_copy.remove(trapped_whites[i])
                 break
-        break
 
     trapped_whites = trapped_whites_copy.copy()
+    trapped_whites.sort(key=lambda x: int(x[0][1:]), reverse=True)
     for i in range(len(destinations)):
         white = trapped_whites[i]
         start = tuple(white)
