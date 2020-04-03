@@ -75,9 +75,10 @@ def find_adjacent_squares(n, square, layout):
 
     x, y = square[1], square[2]
     adjacent_coordinates = [(i, j) for i in range(x - n, x + n + 1) for j in range(y - n, y + n + 1) if
-                            i >= 0 and j >= 0 and (i, j) != (x, y) and (i == x or j == y)]
-
+                            i >= 0 and j >= 0 and (i == x or j == y)]
     non_black_squares = sorted(layout["emptys"] + layout["whites"])
+    # if (x,y) == (3,4):
+    #     print([token for token in non_black_squares if tuple(token[1:]) in adjacent_coordinates])
     return [token for token in non_black_squares if tuple(token[1:]) in adjacent_coordinates]
 
 
@@ -321,63 +322,89 @@ def run_case(data):
             exploded_dict[non_black_square] = exploded_tokens
         return exploded_dict
 
-    def pick_up(white, layout):
+    def pick_up(n, coordinate, layout):
         # A white token is picked up
-        if white not in layout["emptys"]:
-            layout["emptys"].append(white)
 
-        if white in layout["whites"]:
+        d = 0
+        white = (n, coordinate[0], coordinate[1])
+        for w in layout["whites"]:
+            if w[1] == coordinate[0] and w[2] == coordinate[1]:
+                d = w[0] - n
+        if d == 0:
+            layout["emptys"].append(white)
             layout["whites"].remove(white)
+        else:
+            for w in layout["whites"]:
+                if w == white:
+                    layout["whites"].remove(w)
+                    d = w[0] - 1
+                    layout["whites"].append((d, w[1], w[2]))
         return layout
 
-    def place(empty, layout):
+    def place(n, coordinate, layout):
 
-        # A white token is placed
-        if empty in layout["emptys"]:
-            layout["emptys"].remove(empty)
-        layout["whites"].append(empty)
+        target = (n, coordinate[0], coordinate[1])
+        if target in layout["emptys"]:
+            layout["emptys"].remove(target)
+            layout["whites"].append(target)
+        else:
+            for w in layout["whites"]:
+                if w == target:
+                    layout["whites"].remove(w)
+                    d = w[0] + 1
+                    layout["whites"].append((d, w[1], w[2]))
         return layout
 
     # Recursively finding the destinations whites will move to
-    def find_destinations(exploded_blacks, exploded_whites, destinations, n, destinations_list, layout):
+    def find_destinations(exploded_blacks, exploded_whites, destinations, n, destinations_list, layout_copy):
         if n >= 1:
 
             # Determine which white to move
-            white = layout["whites"][0]
-
+            white = layout_copy["whites"][0]
             # Pick up a token and Reset layout
-            layout = pick_up(white, layout)
-            # print(n, white, layout["whites"])
+            layout_copy = pick_up(white[0], white[1:], layout_copy)
             # Obtain exploded dictionary
-            exploded_dict = get_exploded_dict(layout)
-            non_blacks = sorted(layout["emptys"] + layout["whites"])
-            for empty in non_blacks:
-                exploded_blacks_tmp = exploded_blacks.copy()
-                exploded_whites_tmp = exploded_whites.copy()
+            exploded_dict = get_exploded_dict(layout_copy)
+            non_blacks = sorted(layout_copy["emptys"] + layout_copy["whites"])
+            whites_adjacency_list = generate_adjacency_list(white, layout_copy, find_adjacent_squares)
+            for target in non_blacks:
+                # Check if target is accessible
+                if target in dfs(whites_adjacency_list, white):
 
-                # Obtain list of exploded tokens
-                token_dict = exploded_dict[empty]
-                for black in token_dict['blacks']:
-                    if black not in exploded_blacks:
-                        exploded_blacks_tmp.append(black)
-                for exploded_white in token_dict['whites']:
-                    if exploded_white not in exploded_whites:
-                        exploded_whites_tmp.append(exploded_white)
+                    exploded_blacks_tmp = exploded_blacks.copy()
+                    exploded_whites_tmp = exploded_whites.copy()
 
-                # Place the token
-                layout = place(empty, layout)
+                    # Obtain list of exploded tokens
+                    token_dict = exploded_dict[target]
+                    for black in token_dict['blacks']:
+                        if black not in exploded_blacks:
+                            exploded_blacks_tmp.append(black)
+                    for exploded_white in token_dict['whites']:
+                        if exploded_white not in exploded_whites:
+                            exploded_whites_tmp.append(exploded_white)
 
-                # Recursively adding exploded blacks
-                if len(find_destinations(exploded_blacks_tmp, exploded_whites_tmp, destinations + [empty],
-                                         n - 1 - len(exploded_whites_tmp), destinations_list, layout)) == len(
-                    blacks):
-                    destinations_list.append(destinations + [empty])
+                    # Place the token
+                    layout_copy = place(target[0], target[1:], layout_copy)
 
-                # Pick up placed token
-                layout = pick_up(empty, layout)
+                    # Recursively adding exploded blacks
+                    if len(find_destinations(exploded_blacks_tmp, exploded_whites_tmp, destinations + [target],
+                                             n - 1 - len(exploded_whites_tmp), destinations_list, layout_copy)) == len(
+                        blacks):
+                        destinations_list.append(destinations + [target])
+
+                    # Pick up placed token
+                    layout_copy = pick_up(target[0], target[1:], layout_copy)
 
             # Place the token back
-            layout = place(white, layout)
+            layout_copy = place(white[0], white[1:], layout_copy)
+
+            if destinations_list == [] and n == len(layout_copy["whites"]):
+                # Rotate
+                rotate = layout["whites"]
+                layout["whites"] = rotate[1:] + rotate[:1]
+                layout_copy = copy.deepcopy(layout)
+                find_destinations([], [], destinations, len(whites), destinations_list, layout_copy)
+
             return exploded_blacks
         else:
             return exploded_blacks
@@ -386,13 +413,14 @@ def run_case(data):
     destinations_list = []
     layout_copy = copy.deepcopy(layout)
     find_destinations([], [], destinations, len(whites), destinations_list, layout_copy)
+    for d in destinations_list:
+        print("-------", d)
     destinations = destinations_list[0]
-    # print("destinations", destinations)
 
     # Level 1-3
     for i in range(len(destinations)):
         white = layout["whites"][i]
-        start = tuple(white)
+        start = white
         end = destinations[i]
         whites_adjacency_list = generate_adjacency_list(white, layout, find_adjacent_squares)
         # Check if end is accessible
@@ -403,33 +431,36 @@ def run_case(data):
     return
 
     ###**************************************************************************************###
-    ###                                     level 4                                          ###
+    ###                                     level 1-4                                          ###
     ###**************************************************************************************###
     # Determine if the whites are trapped
-    reachable = {}
-    for i in range(len(destinations)):
-        for white in whites:
-            start = tuple(white)
-            end = destinations[i]
-            whites_adjacency_list = generate_adjacency_list(white, layout, find_adjacent_squares)
+
+    def token_exist_in_component(token, white_components):
+        for component in white_components:
+            if whites[i] in component:
+                return True
+        return False
+
+    white_components = []
+    for i in range(len(whites)):
+        if token_exist_in_component(whites[i], white_components):
+            continue
+
+        white_components.append([whites[i]])
+        for j in range(i + 1, len(whites)):
+            start = whites[i]
+            end = whites[j]
+            whites_adjacency_list = generate_adjacency_list(start, layout, find_adjacent_squares)
             # Check if end is accessible
             if end in dfs(whites_adjacency_list, start):
-                if white not in reachable.keys():
-                    reachable[white] = [end]
-                else:
-                    reachable[white].append(end)
+                for component in white_components:
+                    if start in component:
+                        component.append(end)
             else:
-                reachable[white] = []
-
-    reachable_copy = reachable.copy()
-    for i in range(len(destinations)):
-        for k, v in reachable_copy.items():
-            if destinations[i] in v:
-                reachable_copy.pop(k)
-                break
+                white_components.append([end])
 
     # Level 1-3
-    if reachable_copy == {}:
+    if len(white_components) == 1:
         for i in range(len(destinations)):
             white = layout["whites"][i]
             start = tuple(white)
@@ -443,54 +474,43 @@ def run_case(data):
         return
 
     # Level 4
-    # Stacking
-    trapped_whites = whites.copy()
-    trapped_whites_copy = whites.copy()
-    layout_copy = layout.copy()
-    for i in range(len(trapped_whites)):
-        for j in range(i + 1, len(trapped_whites)):
-            start = trapped_whites[i]
-            end = trapped_whites[j]
-            whites_adjacency_list = generate_adjacency_list(start, layout_copy, find_adjacent_squares)
-            if end in dfs(whites_adjacency_list, start):
-                shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
-                print_move_actions(start, shortest_path)
+    # Stack up
+    for i in range(len(white_components)):
+        component = white_components[i]
+        for j in range(len(component[:-1])):
+            start = component[j]
+            end = component[-1]
+            whites_adjacency_list = generate_adjacency_list(start, layout, find_adjacent_squares)
+            layout = pick_up(start[0], start[1:], layout)
+            shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
+            print_move_actions(start, shortest_path)
+            layout = place(end[0], end[1:], layout)
 
-                # Stack
-                moved = (str("W" + str(int(trapped_whites[j][0][1:]) + int(trapped_whites[i][0][1:]))),) + tuple(
-                    trapped_whites[j][1:])
-                layout.remove(trapped_whites[i])
-                layout.append(("E", trapped_whites[i][1], trapped_whites[i][2]))
-                layout.remove(trapped_whites[j])
-                layout.append(moved)
-                # trapped_whites[j] = moved
-                trapped_whites_copy[j] = moved
-                trapped_whites_copy.remove(trapped_whites[i])
-                break
-
-    trapped_whites = trapped_whites_copy.copy()
-    trapped_whites.sort(key=lambda x: int(x[0][1:]), reverse=True)
+    # Move
+    trapped_whites = layout["whites"].copy()
+    trapped_whites.sort(reverse=True)
     for i in range(len(destinations)):
-        white = trapped_whites[i]
-        start = tuple(white)
+        start = trapped_whites[i]
         end = destinations[i]
 
-        whites_adjacency_list = generate_adjacency_list(white, layout, find_adjacent_squares)
+        whites_adjacency_list = generate_adjacency_list(start, layout, find_adjacent_squares)
 
-        # break
         # Check if end is accessible
         if end in dfs(whites_adjacency_list, start):
-            shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
-            print_move_actions(white, shortest_path)
+            print("h", (start[0] - 1, start[1], start[2]))
+            shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, (start[0], start[1], start[2]),
+                                              end)
+            print("shortest_path", shortest_path)
+            print_move_actions(start, shortest_path)
             print_boom(end[1], end[2])
 
             # De-stack
-            moved = ("W1",) + tuple(trapped_whites[i][1:])
-            layout.append(moved)
-            trapped_whites.append(moved)
+            layout = pick_up(start, layout)
+            layout = place(end, layout)
+            # trapped_whites.append(moved)
 
         else:
-            trapped_whites.append(white)
+            trapped_whites.append(start)
 
 
 def main():
