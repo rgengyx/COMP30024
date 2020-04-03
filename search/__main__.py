@@ -413,8 +413,8 @@ def run_case(data):
     destinations_list = []
     layout_copy = copy.deepcopy(layout)
     find_destinations([], [], destinations, len(whites), destinations_list, layout_copy)
-    for d in destinations_list:
-        print("-------", d)
+    # for d in destinations_list:
+    #     print("-------", d)
     destinations = destinations_list[0]
 
     # Level 1-3
