@@ -149,3 +149,42 @@ def print_board(board_dict, message="", unicode=False, compact=True, **kwargs):
             cells.append(str(board_dict[xy])[:3].center(3))
     # print it
     print(template.format(message, *cells), **kwargs)
+
+"""
+############################################################################################
+Extra
+"""
+
+
+def board(data):
+    whites, blacks = data['white'], data['black']
+
+    board_dict = dict()
+
+    for white in whites:
+        if white[0] > 1:
+            board_dict[tuple(white[1:])] = "W" + str(white[0])
+        else:
+            board_dict[tuple(white[1:])] = "W"
+
+    for black in blacks:
+
+        if black[0] > 1:
+            board_dict[tuple(black[1:])] = "B" + str(black[0])
+        else:
+            board_dict[tuple(black[1:])] = "B"
+
+    print_board(board_dict)
+
+
+def print_move_actions(white, path):
+    """Print move actions from a given path to standard output
+    :param path: list of (x, y)
+    :type path: list
+    """
+
+    for i in range(len(path) - 1):
+        n = 1
+        if (abs(path[i][1] - path[i + 1][1]) + abs(path[i][2] - path[i + 1][2])) > 1:
+            n = int(white[0][1:]) - 1
+        print_move(n, path[i][1], path[i][2], path[i + 1][1], path[i + 1][2])
