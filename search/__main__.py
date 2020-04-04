@@ -100,7 +100,7 @@ def find_3x3_surrounding_squares(coordinate):
     #
 
     x, y = coordinate[0], coordinate[1]
-    return [(i, j) for i in [x - 1, x, x + 1] for j in [y - 1, y, y + 1] if i >= 0 and j >= 0 and (i, j) != (x, y)]
+    return [(i, j) for i in [x - 1, x, x + 1] for j in [y - 1, y, y + 1] if i >= 0 and j >= 0]
 
 
 def find_5x5_surrounding_squares(coordinate):
@@ -319,7 +319,7 @@ def run_case(data):
         for non_black_square in non_black_squares:
             exploded_tokens = {"blacks": [], "whites": []}
             get_exploded_tokens(non_black_square[1:], exploded_tokens)
-            exploded_dict[non_black_square] = exploded_tokens
+            exploded_dict[non_black_square[1:]] = exploded_tokens
         return exploded_dict
 
     def pick_up(n, coordinate, layout):
@@ -355,56 +355,102 @@ def run_case(data):
                     layout["whites"].append((d, w[1], w[2]))
         return layout
 
+    def initiate_boom(exploded_blacks_tmp, exploded_whites_tmp, layout):
+
+        for exploded_black in exploded_blacks_tmp:
+            layout["blacks"].remove(exploded_black)
+        for exploded_white in exploded_whites_tmp:
+            layout["whites"].remove(exploded_white)
+
+        for e in exploded_blacks_tmp + exploded_whites_tmp:
+            layout["emptys"].append((1, e[1], e[2]))
+
+        return layout
+
+    def restore(exploded_blacks_tmp, exploded_whites_tmp, layout):
+
+        for exploded_black in exploded_blacks_tmp:
+            layout["blacks"].append(exploded_black)
+        for exploded_white in exploded_whites_tmp:
+            layout["whites"].append(exploded_white)
+
+        for e in exploded_blacks_tmp + exploded_whites_tmp:
+            layout["emptys"].remove((1, e[1], e[2]))
+
+        return layout
+
     # Recursively finding the destinations whites will move to
     def find_destinations(exploded_blacks, exploded_whites, destinations, n, destinations_list, layout_copy):
+
+        if destinations_list != []:
+            return exploded_blacks
         if n >= 1:
 
             # Determine which white to move
+            # print("layout_copy", n, layout_copy["whites"])
             white = layout_copy["whites"][0]
             # Pick up a token and Reset layout
             layout_copy = pick_up(white[0], white[1:], layout_copy)
-            # Obtain exploded dictionary
-            exploded_dict = get_exploded_dict(layout_copy)
+
+            # print(n, white, layout_copy["whites"])
+
             non_blacks = sorted(layout_copy["emptys"] + layout_copy["whites"])
             whites_adjacency_list = generate_adjacency_list(white, layout_copy, find_adjacent_squares)
             for target in non_blacks:
+
                 # Check if target is accessible
                 if target in dfs(whites_adjacency_list, white):
 
                     exploded_blacks_tmp = exploded_blacks.copy()
                     exploded_whites_tmp = exploded_whites.copy()
 
-                    # Obtain list of exploded tokens
-                    token_dict = exploded_dict[target]
-                    for black in token_dict['blacks']:
-                        if black not in exploded_blacks:
-                            exploded_blacks_tmp.append(black)
-                    for exploded_white in token_dict['whites']:
-                        if exploded_white not in exploded_whites:
-                            exploded_whites_tmp.append(exploded_white)
-
                     # Place the token
                     layout_copy = place(target[0], target[1:], layout_copy)
 
+                    # Obtain exploded dictionary
+                    exploded_dict = get_exploded_dict(layout_copy)
+
+                    # Obtain list of exploded tokens
+                    token_dict = exploded_dict[target[1:]]
+                    ebs = []
+                    ews = []
+                    for eb in token_dict['blacks']:
+                        if eb not in exploded_blacks:
+                            ebs.append(eb)
+                    exploded_blacks_tmp.append(ebs)
+                    for ew in token_dict['whites']:
+                        if ew not in exploded_whites:
+                            ews.append(ew)
+                    exploded_whites_tmp.append(ews)
+                    # print("layout_cp before", n, layout_copy["whites"], ews, target)
+                    layout_copy = initiate_boom(ebs, ews, layout_copy)
+                    # print("after", layout_copy["whites"])
                     # Recursively adding exploded blacks
-                    if len(find_destinations(exploded_blacks_tmp, exploded_whites_tmp, destinations + [target],
-                                             n - 1 - len(exploded_whites_tmp), destinations_list, layout_copy)) == len(
-                        blacks):
+                    total_ews = 0
+                    for e in ews:
+                        total_ews += e[0]
+                    nested = find_destinations(exploded_blacks_tmp, exploded_whites_tmp, destinations + [target],
+                                               n - total_ews, destinations_list, layout_copy)
+
+                    if len(list(itertools.chain(*nested))) == len(blacks):
                         destinations_list.append(destinations + [target])
-
+                        # print("destinations_list", destinations_list)
+                        break
                     # Pick up placed token
+                    layout_copy = restore(ebs, ews, layout_copy)
                     layout_copy = pick_up(target[0], target[1:], layout_copy)
-
+                    # print("return",n, layout_copy["whites"])
             # Place the token back
             layout_copy = place(white[0], white[1:], layout_copy)
+            # layout_copy = restore(exploded_blacks[0], exploded_whites[0], layout_copy)
 
-            if destinations_list == [] and n == len(layout_copy["whites"]):
+            if destinations_list == [] and n == len(whites):
                 # Rotate
+                # print("rotate")
                 rotate = layout["whites"]
                 layout["whites"] = rotate[1:] + rotate[:1]
                 layout_copy = copy.deepcopy(layout)
                 find_destinations([], [], destinations, len(whites), destinations_list, layout_copy)
-
             return exploded_blacks
         else:
             return exploded_blacks
