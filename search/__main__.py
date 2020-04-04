@@ -177,7 +177,7 @@ def run_case(data):
 
                 if len(list(itertools.chain(*nested))) == len(blacks):
                     destinations_list.append(destinations + [target])
-                    print("destinations_list", destinations_list)
+                    # print("destinations_list", destinations_list)
                     break
                 # Pick up placed token
                 layout_copy = restore(ebs, ews, layout_copy)
@@ -191,7 +191,7 @@ def run_case(data):
 
             if destinations_list == [] and n == len(whites):
                 # Rotate
-                print("rotate")
+                # print("rotate")
                 rotate = layout["whites"]
                 layout["whites"] = rotate[1:] + rotate[:1]
                 layout_copy = copy.deepcopy(layout)
@@ -233,13 +233,16 @@ def run_case(data):
             ebs.append(eb)
         for ew in token_dict['whites']:
             ews.append(ew)
-        layout = initiate_boom(ebs, ews, layout)
+
         # print(layout["whites"])
 
         # Check if end is accessible
         # if end in dfs(whites_adjacency_list, start):
         shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
         print_move_actions(white, shortest_path)
+        if not ebs and ews == [white]:
+            continue
+        layout = initiate_boom(ebs, ews, layout)
         print_boom(end[1], end[2])
 
     return
