@@ -92,6 +92,7 @@ def run_case(data):
         else:
             for w in layout["whites"]:
                 if w == target:
+                # if w[1] == target[1] and w[2] == target[2]:
                     layout["whites"].remove(w)
                     d = w[0] + 1
                     layout["whites"].append((d, w[1], w[2]))
