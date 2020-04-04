@@ -424,10 +424,10 @@ def run_case(data):
         end = destinations[i]
         whites_adjacency_list = generate_adjacency_list(white, layout, find_adjacent_squares)
         # Check if end is accessible
-        if end in dfs(whites_adjacency_list, start):
-            shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
-            print_move_actions(white, shortest_path)
-            print_boom(end[1], end[2])
+        # if end in dfs(whites_adjacency_list, start):
+        shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
+        print_move_actions(white, shortest_path)
+        print_boom(end[1], end[2])
     return
 
     ###**************************************************************************************###
