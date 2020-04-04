@@ -140,9 +140,6 @@ def run_case(data):
             non_blacks = sorted(layout_copy["emptys"] + layout_copy["whites"])
             whites_adjacency_list = generate_adjacency_list(white, layout_copy, find_adjacent_squares)
             bfs_path = bfs(whites_adjacency_list, white)
-            v = sorted(non_blacks) == sorted(bfs_path)
-            if v == False:
-                print("v")
             for target in bfs_path:
 
                 # Check if target is accessible
@@ -213,15 +210,38 @@ def run_case(data):
 
     # Level 1-3
     for i in range(len(destinations)):
-        white = layout["whites"][i]
+        white = layout["whites"][0]
         start = white
         end = destinations[i]
-        whites_adjacency_list = generate_adjacency_list(white, layout, find_adjacent_squares)
+
+        # Pick up
+        layout = pick_up(start[0], start[1:], layout)
+
+        whites_adjacency_list = generate_adjacency_list(start, layout, find_adjacent_squares)
+
+        # Place the token
+        layout = place(end[0], end[1:], layout)
+
+        # Obtain exploded dictionary
+        exploded_dict = get_exploded_dict(layout)
+
+        # Obtain list of exploded tokens
+        token_dict = exploded_dict[end[1:]]
+        ebs = []
+        ews = []
+        for eb in token_dict['blacks']:
+            ebs.append(eb)
+        for ew in token_dict['whites']:
+            ews.append(ew)
+        layout = initiate_boom(ebs, ews, layout)
+        # print(layout["whites"])
+
         # Check if end is accessible
         # if end in dfs(whites_adjacency_list, start):
         shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
         print_move_actions(white, shortest_path)
         print_boom(end[1], end[2])
+
     return
 
     ###**************************************************************************************###
