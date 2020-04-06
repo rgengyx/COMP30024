@@ -138,7 +138,8 @@ def run_case(data):
         return layout
 
     # Recursively finding the destinations whites will move to
-    def find_destinations(exploded_blacks, exploded_whites, destinations, n, destinations_list, layout_copy):
+    def find_destinations(exploded_blacks, exploded_whites, destinations, n, destinations_list, layout_copy, perm,
+                          perm_no):
 
         if destinations_list != []:
             return exploded_blacks
@@ -193,7 +194,7 @@ def run_case(data):
                 for e in ews:
                     total_ews += e[0]
                 nested = find_destinations(exploded_blacks_tmp, exploded_whites_tmp, destinations + [target],
-                                           n - total_ews, destinations_list, layout_copy)
+                                           n - total_ews, destinations_list, layout_copy, perm, perm_no)
 
                 if len(list(itertools.chain(*nested))) == len(blacks):
                     destinations_list.append(destinations + [target])
@@ -214,10 +215,10 @@ def run_case(data):
             if destinations_list == [] and n == len(whites):
                 # Rotate
                 # print("rotate")
-                rotate = layout["whites"]
-                layout["whites"] = rotate[1:] + rotate[:1]
+                perm_no += 1
+                layout["whites"] = perm[perm_no]
                 layout_copy = copy.deepcopy(layout)
-                find_destinations([], [], destinations, len(whites), destinations_list, layout_copy)
+                find_destinations([], [], destinations, len(whites), destinations_list, layout_copy, perm, perm_no)
             return exploded_blacks
         else:
             return exploded_blacks
@@ -225,7 +226,9 @@ def run_case(data):
     destinations = []
     destinations_list = []
     layout_copy = copy.deepcopy(layout)
-    find_destinations([], [], destinations, len(whites), destinations_list, layout_copy)
+    perm = [list(t) for t in list(itertools.permutations(layout["whites"]))]
+    layout_copy["whites"] = perm[0]
+    find_destinations([], [], destinations, len(whites), destinations_list, layout_copy, perm, 0)
     # for d in destinations_list:
     #     print("-------", d)
     destinations = destinations_list[0]
