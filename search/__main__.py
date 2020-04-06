@@ -1,13 +1,11 @@
-import sys
-import json
-import collections
-import itertools
 import copy
+import itertools
+import json
+import sys
 
-from search.util import *
-from search.square import *
 from search.graph import *
-
+from search.square import *
+from search.util import *
 
 
 def get_3x3_surrounding_tokens(tokens, squares):
@@ -36,7 +34,7 @@ def run_case(data):
         "blacks": blacks
     }
 
-    def get_exploded_dict(layout):
+    def get_exploded_dict(coord, layout):
 
         def get_exploded_tokens(coordinate, exploded_tokens):
 
@@ -56,13 +54,18 @@ def run_case(data):
                     coordinate = tuple(token[1:])
                     get_exploded_tokens(coordinate, exploded_tokens)
 
-        exploded_dict = {}
-        non_black_squares = sorted(layout["emptys"] + layout["whites"])
-        for non_black_square in non_black_squares:
-            exploded_tokens = {"blacks": [], "whites": []}
-            get_exploded_tokens(non_black_square[1:], exploded_tokens)
-            exploded_dict[non_black_square[1:]] = exploded_tokens
-        return exploded_dict
+        # exploded_dict = {}
+        # non_black_squares = sorted(layout["emptys"] + layout["whites"])
+        # for non_black_square in non_black_squares:
+        #     exploded_tokens = {"blacks": [], "whites": []}
+        #     get_exploded_tokens(non_black_square[1:], exploded_tokens)
+        #     exploded_dict[non_black_square[1:]] = exploded_tokens
+        # return exploded_dict
+
+        exploded_tokens = {"blacks": [], "whites": []}
+        get_exploded_tokens(coord, exploded_tokens)
+
+        return exploded_tokens
 
     def pick_up(n, coordinate, layout):
         # A white token is picked up
@@ -78,9 +81,15 @@ def run_case(data):
         else:
             for w in layout["whites"]:
                 if w[1] == white[1] and w[2] == white[2]:
+                    index = layout["whites"].index(w)
                     layout["whites"].remove(w)
                     d = w[0] - 1
-                    layout["whites"].append((d, w[1], w[2]))
+                    layout["whites"].insert(index, (d, w[1], w[2]))
+
+        # layout["whites"].remove(white)
+        # if white not in layout["whites"]:
+        #     layout["emptys"].append(white)
+
         return layout
 
     def place(n, coordinate, layout):
@@ -88,14 +97,20 @@ def run_case(data):
         target = (n, coordinate[0], coordinate[1])
         if target in layout["emptys"]:
             layout["emptys"].remove(target)
-            layout["whites"].append(target)
+            layout["whites"].insert(0, target)
         else:
             for w in layout["whites"]:
-                if w == target:
-                # if w[1] == target[1] and w[2] == target[2]:
+                # if w == target:
+                if w[1] == target[1] and w[2] == target[2]:
+                    index = layout["whites"].index(w)
                     layout["whites"].remove(w)
                     d = w[0] + 1
-                    layout["whites"].append((d, w[1], w[2]))
+                    layout["whites"].insert(index, (d, w[1], w[2]))
+
+        # if target in layout["emptys"]:
+        #     layout["emptys"].remove(target)
+        # layout["whites"].insert(0, target)
+
         return layout
 
     def initiate_boom(exploded_blacks_tmp, exploded_whites_tmp, layout):
@@ -133,9 +148,10 @@ def run_case(data):
             # print("layout_copy", n, layout_copy["whites"])
             white = layout_copy["whites"][0]
             # Pick up a token and Reset layout
-            layout_copy = pick_up(white[0], white[1:], layout_copy)
-
-            # print(n, white, layout_copy["whites"])
+            if layout_copy["whites"] == [(1,4,3),(1,3,4)]:
+                print(n)
+            layout_copy = pick_up(1, white[1:], layout_copy)
+            # print(n, white, layout_copy["whites"], destinations)
 
             non_blacks = sorted(layout_copy["emptys"] + layout_copy["whites"])
             whites_adjacency_list = generate_adjacency_list(white, layout_copy, find_adjacent_squares)
@@ -150,11 +166,14 @@ def run_case(data):
                 # Place the token
                 layout_copy = place(target[0], target[1:], layout_copy)
 
-                # Obtain exploded dictionary
-                exploded_dict = get_exploded_dict(layout_copy)
+                # # Obtain exploded dictionary
+                # exploded_dict = get_exploded_dict(layout_copy)
+                #
+                # # Obtain list of exploded tokens
+                # token_dict = exploded_dict[target[1:]]
 
-                # Obtain list of exploded tokens
-                token_dict = exploded_dict[target[1:]]
+                token_dict = get_exploded_dict(target[1:], layout_copy)
+
                 ebs = []
                 ews = []
                 for eb in token_dict['blacks']:
@@ -165,7 +184,8 @@ def run_case(data):
                     if ew not in exploded_whites:
                         ews.append(ew)
                 exploded_whites_tmp.append(ews)
-                # print("layout_cp before", n, layout_copy["whites"], ews, target)
+                # print("layout_cp ", n, layout_copy["whites"], ews, target)
+                layout_copy_before = copy.deepcopy(layout_copy)
                 layout_copy = initiate_boom(ebs, ews, layout_copy)
                 # print("after", layout_copy["whites"])
                 # Recursively adding exploded blacks
@@ -177,13 +197,15 @@ def run_case(data):
 
                 if len(list(itertools.chain(*nested))) == len(blacks):
                     destinations_list.append(destinations + [target])
-                    print("destinations_list", destinations_list)
+                    # print("destinations_list", destinations_list)
                     break
                 # Pick up placed token
-                layout_copy = restore(ebs, ews, layout_copy)
+                # layout_copy = restore(ebs, ews, layout_copy)
+                layout_copy = copy.deepcopy(layout_copy_before)
+
                 # print("return before", n, layout_copy["whites"], target)
-                layout_copy = pick_up(target[0], target[1:], layout_copy)
-                # print("return",n, layout_copy["whites"])
+                layout_copy = pick_up(1, target[1:], layout_copy)
+                # print("return",n, layout_copy["whites"], target)
 
             # Place the token back
             layout_copy = place(white[0], white[1:], layout_copy)
@@ -191,7 +213,7 @@ def run_case(data):
 
             if destinations_list == [] and n == len(whites):
                 # Rotate
-                print("rotate")
+                # print("rotate")
                 rotate = layout["whites"]
                 layout["whites"] = rotate[1:] + rotate[:1]
                 layout_copy = copy.deepcopy(layout)
@@ -222,24 +244,24 @@ def run_case(data):
         # Place the token
         layout = place(end[0], end[1:], layout)
 
-        # Obtain exploded dictionary
-        exploded_dict = get_exploded_dict(layout)
+        token_dict = get_exploded_dict(end[1:], layout)
 
-        # Obtain list of exploded tokens
-        token_dict = exploded_dict[end[1:]]
         ebs = []
         ews = []
         for eb in token_dict['blacks']:
             ebs.append(eb)
         for ew in token_dict['whites']:
             ews.append(ew)
-        layout = initiate_boom(ebs, ews, layout)
+
         # print(layout["whites"])
 
         # Check if end is accessible
         # if end in dfs(whites_adjacency_list, start):
         shortest_path = bfs_shortest_path(blacks, whites_adjacency_list, start, end)
         print_move_actions(white, shortest_path)
+        layout = initiate_boom(ebs, ews, layout)
+        if not ebs and ews == [white]:
+            continue
         print_boom(end[1], end[2])
 
     return
@@ -325,6 +347,7 @@ def run_case(data):
 
         else:
             trapped_whites.append(start)
+
 
 def main():
     with open(sys.argv[1]) as file:
