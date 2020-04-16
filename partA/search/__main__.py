@@ -323,8 +323,7 @@ def main():
     with open(sys.argv[1]) as file:
         data = json.load(file)
 
-    # TODO: find and print winning action sequence
-    board(data)
+    #board(data)
     run_case(data)
 
 
