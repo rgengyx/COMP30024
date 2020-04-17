@@ -150,7 +150,7 @@ def connected_components(graph):
             yield component
 
 
-def minimax(layout, depth, maximizing_player, colour):
+def minimax(layout, depth, alpha, beta, maximizing_player, colour):
     if depth == 0:
 
         if colour == "whites":
@@ -162,20 +162,27 @@ def minimax(layout, depth, maximizing_player, colour):
         max_action = None
         action_layout_dict = generate_all_layouts(layout, colour)
         for a, l in action_layout_dict.items():
-            eval, _ = minimax(l, depth - 1, False, colour)
+            eval, _ = minimax(l, depth - 1, alpha, beta, False, colour)
             if eval > max_eval:
                 max_eval = eval
                 max_action = a
+
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
         return max_eval, max_action
     else:
         min_eval = 13
         min_action = None
         action_layout_dict = generate_all_layouts(layout, colour)
         for a, l in action_layout_dict.items():
-            eval, _ = minimax(l, depth - 1, True, colour)
+            eval, _ = minimax(l, depth - 1, alpha, beta, True, colour)
             if eval < min_eval:
                 min_eval = eval
                 min_action = a
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
         return min_eval, min_action
 
 
