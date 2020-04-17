@@ -1,5 +1,5 @@
 import random
-from opponent_random.square import *
+from opponent_random_greedy.square import *
 
 
 class ExamplePlayer:
@@ -36,10 +36,13 @@ class ExamplePlayer:
         """
         # TODO: Decide what action to take, and return it
 
-        token = random.choice(self.layout[self.colour + "s"])
-        destination = random.choice(find_adjacent_squares(token, self.layout))
+        black = random.choice(self.layout["blacks"])
+        try:
+            destination = random.choice(find_adjacent_squares(black, self.layout))
+        except IndexError:
+            print("self.layout", black, self.layout)
 
-        n, xa, ya = token[0], token[1], token[2]
+        n, xa, ya = black[0], black[1], black[2]
         xb, yb = destination[1], destination[2]
         if xa == xb and ya == yb:
             return ("BOOM", (xa, ya))

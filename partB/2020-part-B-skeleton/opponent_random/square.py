@@ -37,12 +37,10 @@ def find_adjacent_squares(square, layout):
 
     n, x, y = square[0], square[1], square[2]
     adjacent_coordinates = [(i, j) for i in range(x - n, x + n + 1) for j in range(y - n, y + n + 1) if
-                            i >= 0 and j >= 0 and (i == x or j == y)]
+                            0 <= i <= 7 and 0 <= j <= 7 and (i == x or j == y)]
 
     emptys = generate_all_empty_squares(layout)
     non_white_squares = emptys + layout["blacks"]
-    print("adjacent_coordinates", adjacent_coordinates)
-    print("blacks", layout["blacks"])
     return [token for token in non_white_squares if tuple(token[1:]) in adjacent_coordinates]
 
 

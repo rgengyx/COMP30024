@@ -1,7 +1,7 @@
 from collections import deque
 import random
-from rapidbot.square import *
-from rapidbot.util import *
+from opponent_minimax.square import *
+from opponent_minimax.util import *
 import copy
 
 

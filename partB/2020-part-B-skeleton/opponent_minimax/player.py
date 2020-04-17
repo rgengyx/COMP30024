@@ -1,6 +1,6 @@
 import random
-from rapidbot.square import *
-from rapidbot.graph import *
+from opponent_minimax.square import *
+from opponent_minimax.graph import *
 
 
 class ExamplePlayer:
