@@ -39,7 +39,7 @@ class ExamplePlayer:
 
         token = random.choice(self.layout[self.colour + "s"])
 
-        opponent = "blacks" if self.colour == "whites" else "whites"
+        opponent = "blacks" if self.colour == "white" else "whites"
 
         closestOpponent = None
         closestOpponentDist = 17
