@@ -190,7 +190,7 @@ def generate_all_layouts(layout, colour):
     action_layout_dict = {}
 
     for token in layout[colour]:
-        destinations = find_adjacent_squares(token, layout)
+        destinations = find_adjacent_squares(token, layout, colour)
         for destination in destinations:
             n, xa, ya = token[0], token[1], token[2]
             xb, yb = destination[1], destination[2]

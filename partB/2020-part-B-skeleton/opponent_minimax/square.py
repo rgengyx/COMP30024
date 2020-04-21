@@ -29,7 +29,7 @@ def generate_all_empty_squares(layout):
     return emptys
 
 
-def find_adjacent_squares(square, layout):
+def find_adjacent_squares(square, layout, colour):
     """Return a list of adjacent square coordinates
     :param square: (x, y)
     :type: tuple
@@ -40,7 +40,7 @@ def find_adjacent_squares(square, layout):
                             0 <= i <= 7 and 0 <= j <= 7 and (i == x or j == y)]
 
     emptys = generate_all_empty_squares(layout)
-    non_black_squares = emptys + layout["whites"]
+    non_black_squares = emptys + layout[colour]
     return [token for token in non_black_squares if tuple(token[1:]) in adjacent_coordinates]
 
 

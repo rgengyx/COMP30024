@@ -29,19 +29,19 @@ def generate_all_empty_squares(layout):
     return emptys
 
 
-def find_adjacent_squares(square, layout):
+def find_adjacent_squares(square, layout, colour):
     """Return a list of adjacent square coordinates
     :param square: (x, y)
     :type: tuple
     """
 
     n, x, y = square[0], square[1], square[2]
-    adjacent_coordinates = [(i, j) for i in range(x - n, x + n + 1) for j in range(y - n, y + 1) if
+    adjacent_coordinates = [(i, j) for i in range(x - n, x + n + 1) for j in range(y - n, y + n + 1) if
                             0 <= i <= 7 and 0 <= j <= 7 and (i == x or j == y)]
 
     emptys = generate_all_empty_squares(layout)
-    non_white_squares = emptys + layout["blacks"]
-    return [token for token in non_white_squares if tuple(token[1:]) in adjacent_coordinates]
+    non_black_squares = emptys + layout[colour]
+    return [token for token in non_black_squares if tuple(token[1:]) in adjacent_coordinates]
 
 
 def find_3x3_surrounding_squares(coordinate):
