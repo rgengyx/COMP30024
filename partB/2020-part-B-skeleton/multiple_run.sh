@@ -18,6 +18,7 @@ for opponent in "${opponents[@]}"; do
       let "white_win+=1"
     elif [[ $winner == "black" ]]; then
       let "black_win+=1"
+      echo $win >> lose.txt
     else
       let "draw+=1"
     fi

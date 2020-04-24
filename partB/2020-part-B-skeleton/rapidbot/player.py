@@ -38,7 +38,9 @@ class ExamplePlayer:
         # TODO: Decide what action to take, and return it
 
         # Minimax: For each white tokens on the board, there are 4 different directions to move to.
-        _, action = minimax(self.layout, 3, -13, 13, True, self.colour + "s")
+        colour = "blacks" if self.colour == "white" else "whites"
+        # print("self.layout ------------", self.layout)
+        eval, action = minimax(self.layout, 4, -13, 13, True, colour, self.colour + "s")
         return action
 
     def update(self, colour, action):
