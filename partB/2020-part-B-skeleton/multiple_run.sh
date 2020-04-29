@@ -1,6 +1,7 @@
 #!/bin/sh
 
-opponents=( $2 )
+player=$2
+opponents=( $3 )
 
 for opponent in "${opponents[@]}"; do
 
@@ -11,7 +12,7 @@ for opponent in "${opponents[@]}"; do
 
   for ((i=0; i<$num_games; i=i+1)); do
 
-    win=$(python3.6 -m referee rapidbot $opponent | grep winner)
+    win=$(python3.6 -m referee $player $opponent | grep winner)
     winner=${win:10:5}
 
     if [[ $winner == "white" ]]; then

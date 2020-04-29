@@ -1,6 +1,6 @@
 import random
-from opponent_minimax.square import *
-from opponent_minimax.graph import *
+from opponent_random_sparse.square import *
+from opponent_random_sparse.graph import *
 
 
 class ExamplePlayer:
@@ -37,9 +37,26 @@ class ExamplePlayer:
         """
         # TODO: Decide what action to take, and return it
 
-        # Minimax: For each white tokens on the board, there are 4 different directions to move to.
-        _, action = minimax(self.layout, 3, -13, 13, True, self.colour + "s")
-        return action
+        colour = self.colour + "s"
+        token = random.choice(self.layout[colour])
+
+        destinations = find_adjacent_squares(token, self.layout, self.colour + "s")
+        min_destination = None
+        min_exploded_num = 13
+        for destination in destinations:
+            coord = destination[1:]
+            exploded_token_dict = get_exploded_dict(coord, self.layout)
+            exploded = exploded_token_dict[colour]
+            if len(exploded) < min_exploded_num:
+                min_exploded_num = len(exploded)
+                min_destination = destination
+
+        destination = min_destination
+        n, xa, ya = token[0], token[1], token[2]
+        xb, yb = destination[1], destination[2]
+        if xa == xb and ya == yb:
+            return ("BOOM", (xa, ya))
+        return ("MOVE", n, (xa, ya), (xb, yb))
 
     def update(self, colour, action):
         """
