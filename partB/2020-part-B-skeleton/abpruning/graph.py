@@ -1,7 +1,7 @@
 from collections import deque
 import random
-from rapidbot.square import *
-from rapidbot.util import *
+from abpruning.square import *
+from abpruning.util import *
 import copy
 
 

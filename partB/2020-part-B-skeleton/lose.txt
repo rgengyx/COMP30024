@@ -93,3 +93,14 @@ lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy
 lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
 lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
 lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
+abpruning lose.txt multiple_run.sh opponent_minimax opponent_random opponent_random_greedy opponent_random_sparse rapidbot README.MD referee winner: black
