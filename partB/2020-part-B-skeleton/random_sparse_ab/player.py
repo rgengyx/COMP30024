@@ -1,6 +1,6 @@
 import random
-from sparse_advantage_minimax.square import *
-from sparse_advantage_minimax.graph import *
+from random_sparse_ab.square import *
+from random_sparse_ab.graph import *
 
 
 class ExamplePlayer:
@@ -35,62 +35,68 @@ class ExamplePlayer:
         return an allowed action to play on this turn. The action must be
         represented based on the spec's instructions for representing actions.
         """
+
         # TODO: Decide what action to take, and return it
+
+        def find_nearby_opponents(our_colour):
+            nearby_opponents = []
+            for our in self.layout[our_colour]:
+                surroundings = find_nxn_surrounding_squares(our[1:], our[0])
+                for surrounding in surroundings:
+                    for opponent in self.layout[opponent_colour]:
+                        if opponent[1] == surrounding[0] and opponent[2] == surrounding[1]:
+                            nearby_opponents.append(opponent)
+            return nearby_opponents
+
+        def find_sparse_destination():
+            destinations = find_adjacent_squares(token, self.layout, our_colour)
+            destinations = [d for d in destinations if not (xa == d[1] and ya == d[2])]
+            min_destination = None
+            min_exploded_num = 13
+
+            # Find a destination that causes least explosion of our token and most explosion of opponent's token
+            for destination in destinations:
+                coord = destination[1:]
+                layout = copy.deepcopy(self.layout)
+                layout[our_colour].remove(token)
+
+                exist = False
+                for our in layout[our_colour]:
+                    if our[1] == destination[1] and our[2] == destination[2]:
+                        our[0] += token[0]
+                        exist = True
+                        break
+
+                if not exist:
+                    layout[our_colour].append([token[0], destination[1], destination[2]])
+                exploded_token_dict = get_exploded_dict(coord, layout)
+                our_exploded, opponent_exploded = exploded_token_dict[our_colour], exploded_token_dict[opponent_colour]
+                if sum(t[0] for t in our_exploded) - sum(t[0] for t in opponent_exploded) < min_exploded_num:
+                    min_exploded_num = sum(t[0] for t in our_exploded) - sum(t[0] for t in opponent_exploded)
+                    min_destination = destination
+            return min_destination
 
         our_colour = self.colour + "s"
         opponent_colour = "blacks" if self.colour == "white" else "whites"
 
-        nearby_opponents = []
-        for our in self.layout[our_colour]:
-            surroudings = find_3x3_surrounding_squares(our[1:])
-            for surrounding in surroudings:
-                for opponent in self.layout[opponent_colour]:
-                    if opponent[1] == surrounding[0] and opponent[2] == surrounding[1]:
-                        nearby_opponents.append(opponent)
-
+        nearby_opponents = find_nearby_opponents(our_colour)
         if not nearby_opponents:
             # Make sparse
+            token = random.choice(self.layout[our_colour])
+            n, xa, ya = token[0], token[1], token[2]
 
-            for our in self.layout[our_colour]:
-                surroudings = find_3x3_surrounding_squares(our[1:])
-                for surrounding in surroudings:
-                    for other in self.layout[our_colour]:
-                        if other[1] == surrounding[0] and other[2] == surrounding[1]:
-                            token = our
-                            n, xa, ya = token[0], token[1], token[2]
-
-                            destinations = find_adjacent_squares(token, self.layout, our_colour)
-                            destinations = [d for d in destinations if not (xa == d[1] and ya == d[2])]
-                            min_destination = None
-                            min_exploded_num = 13
-                            for destination in destinations:
-                                coord = destination[1:]
-                                exploded_token_dict = get_exploded_dict(coord, self.layout)
-                                exploded = exploded_token_dict[our_colour]
-                                if len(exploded) < min_exploded_num:
-                                    min_exploded_num = len(exploded)
-                                    min_destination = destination
-
-                            destination = min_destination
-                            xb, yb = destination[1], destination[2]
-                            # if xa == xb and ya == yb:
-                            #     destination = random.choice(destinations)
-                            #     xb, yb = destination[1], destination[2]
-                            return ("MOVE", n, (xa, ya), (xb, yb))
-
+            destination = find_sparse_destination()
+            xb, yb = destination[1], destination[2]
+            return ("MOVE", n, (xa, ya), (xb, yb))
         else:
-
-            # Opponent is near but we are at advantage
+            # Only one opponent is left and can be boomed
             for token in self.layout[our_colour]:
                 coord = token[1:]
                 exploded_token_dict = get_exploded_dict(coord, self.layout)
-
-                if sum(t[0] for t in exploded_token_dict[opponent_colour]) >= sum(
-                        t[0] for t in exploded_token_dict[our_colour]):
+                if (len(exploded_token_dict[opponent_colour]) > 0) and (len(self.layout[opponent_colour]) == 1):
                     n, xa, ya = token[0], token[1], token[2]
                     return ("BOOM", (xa, ya))
 
-            # Opponent is near but we are at disadvantage
             # Minimax
             eval, action = minimax(self.layout, 3, -13, 13, True, opponent_colour, our_colour)
             return action

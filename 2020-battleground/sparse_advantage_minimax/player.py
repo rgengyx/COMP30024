@@ -50,33 +50,27 @@ class ExamplePlayer:
 
         if not nearby_opponents:
             # Make sparse
+            token = random.choice(self.layout[our_colour])
+            n, xa, ya = token[0], token[1], token[2]
 
-            for our in self.layout[our_colour]:
-                surroudings = find_3x3_surrounding_squares(our[1:])
-                for surrounding in surroudings:
-                    for other in self.layout[our_colour]:
-                        if other[1] == surrounding[0] and other[2] == surrounding[1]:
-                            token = our
-                            n, xa, ya = token[0], token[1], token[2]
+            destinations = find_adjacent_squares(token, self.layout, our_colour)
+            destinations = [d for d in destinations if not (xa == d[1] and ya == d[2])]
+            min_destination = None
+            min_exploded_num = 13
+            for destination in destinations:
+                coord = destination[1:]
+                exploded_token_dict = get_exploded_dict(coord, self.layout)
+                exploded = exploded_token_dict[our_colour]
+                if len(exploded) < min_exploded_num:
+                    min_exploded_num = len(exploded)
+                    min_destination = destination
 
-                            destinations = find_adjacent_squares(token, self.layout, our_colour)
-                            destinations = [d for d in destinations if not (xa == d[1] and ya == d[2])]
-                            min_destination = None
-                            min_exploded_num = 13
-                            for destination in destinations:
-                                coord = destination[1:]
-                                exploded_token_dict = get_exploded_dict(coord, self.layout)
-                                exploded = exploded_token_dict[our_colour]
-                                if len(exploded) < min_exploded_num:
-                                    min_exploded_num = len(exploded)
-                                    min_destination = destination
-
-                            destination = min_destination
-                            xb, yb = destination[1], destination[2]
-                            # if xa == xb and ya == yb:
-                            #     destination = random.choice(destinations)
-                            #     xb, yb = destination[1], destination[2]
-                            return ("MOVE", n, (xa, ya), (xb, yb))
+            destination = min_destination
+            xb, yb = destination[1], destination[2]
+            # if xa == xb and ya == yb:
+            #     destination = random.choice(destinations)
+            #     xb, yb = destination[1], destination[2]
+            return ("MOVE", n, (xa, ya), (xb, yb))
 
         else:
 
