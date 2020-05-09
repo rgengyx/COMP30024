@@ -1,7 +1,7 @@
 from collections import deque
 import random
-from random_player.square import *
-from random_player.util import *
+from ab_destack.square import *
+from ab_destack.util import *
 import copy
 
 
@@ -150,32 +150,41 @@ def connected_components(graph):
             yield component
 
 
-def minimax(layout, depth, maximizing_player, colour):
-    if depth == 0:
+def minimax(layout, depth, alpha, beta, maximizing_player, colour, our_colour):
+    colour = "blacks" if colour == "whites" else "whites"
 
-        if colour == "whites":
+    opponent_colour = "blacks" if our_colour == "whites" else "whites"
+    if depth == 0 or len(layout[opponent_colour]) == 0 or len(layout[our_colour]) == 0:
+        if our_colour == "whites":
             return len(layout["whites"]) - len(layout["blacks"]), None
-        elif colour == "blacks":
+        elif our_colour == "blacks":
             return len(layout["blacks"]) - len(layout["whites"]), None
     if maximizing_player:
         max_eval = -13
         max_action = None
         action_layout_dict = generate_all_layouts(layout, colour)
         for a, l in action_layout_dict.items():
-            eval, _ = minimax(l, depth - 1, False, colour)
+            eval, _ = minimax(l, depth - 1, alpha, beta, False, colour, our_colour)
             if eval > max_eval:
                 max_eval = eval
                 max_action = a
+
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
         return max_eval, max_action
     else:
         min_eval = 13
         min_action = None
         action_layout_dict = generate_all_layouts(layout, colour)
         for a, l in action_layout_dict.items():
-            eval, _ = minimax(l, depth - 1, True, colour)
+            eval, _ = minimax(l, depth - 1, alpha, beta, True, colour, our_colour)
             if eval < min_eval:
                 min_eval = eval
                 min_action = a
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
         return min_eval, min_action
 
 

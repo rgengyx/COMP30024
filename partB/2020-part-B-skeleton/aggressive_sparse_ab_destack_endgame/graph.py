@@ -1,24 +1,24 @@
 from collections import deque
 import random
-from random_player.square import *
-from random_player.util import *
+from aggressive_sparse_ab_destack_endgame.square import *
+from aggressive_sparse_ab_destack_endgame.util import *
 import copy
 
 
-def generate_adjacency_list(white, layout, adjacency_func):
+def generate_adjacency_list(layout, adjacency_func, our_colour):
     """Return a dictionary of adjacency list
     :param squares: list of square coordinates
     :type squares: list
     """
 
-    non_black_squares = sorted(layout["emptys"] + layout["whites"])
+    our_squares = layout[our_colour]
     adjacency_list = {}
-    for current_square in non_black_squares:
-        adjacency_list[current_square] = []
-        for other_square in non_black_squares:
-            if other_square != current_square and other_square in adjacency_func(white[0], current_square,
-                                                                                 layout):
-                adjacency_list[current_square].append(other_square)
+    for current_square in our_squares:
+        adjacency_list[tuple(current_square)] = []
+        for other_square in our_squares:
+            if other_square != current_square and other_square in adjacency_func(1, current_square,
+                                                                                 layout, our_colour):
+                adjacency_list[tuple(current_square)].append(other_square)
 
     return adjacency_list
 
@@ -144,43 +144,57 @@ def connected_components(graph):
                 node = queue.popleft()
                 component.append(node)
                 for neighbor in graph[node]:
-                    if neighbor not in seen:
-                        seen.add(neighbor)
-                        queue.append(neighbor)
+                    nei = tuple(neighbor)
+                    if nei not in seen:
+                        seen.add(nei)
+                        queue.append(nei)
             yield component
 
 
-def minimax(layout, depth, maximizing_player, colour):
-    if depth == 0:
+def minimax(layout, depth, alpha, beta, maximizing_player, colour, our_colour):
+    colour = "blacks" if colour == "whites" else "whites"
 
-        if colour == "whites":
-            return len(layout["whites"]) - len(layout["blacks"]), None
-        elif colour == "blacks":
-            return len(layout["blacks"]) - len(layout["whites"]), None
+    opponent_colour = "blacks" if our_colour == "whites" else "whites"
+
+    if sum(t[0] for t in layout[opponent_colour]) == 0:
+        return 100, None
+
+    if depth == 0 or sum(t[0] for t in layout[our_colour]) == 0:
+        if our_colour == "whites":
+            return sum(t[0] for t in layout["whites"]) - sum(t[0] for t in layout["blacks"]), None
+        elif our_colour == "blacks":
+            return sum(t[0] for t in layout["blacks"]) - sum(t[0] for t in layout["whites"]), None
     if maximizing_player:
         max_eval = -13
         max_action = None
-        action_layout_dict = generate_all_layouts(layout, colour)
-        for a, l in action_layout_dict.items():
-            eval, _ = minimax(l, depth - 1, False, colour)
+        action_layout_list = generate_all_layouts(layout, colour)
+        for t, a, l in action_layout_list:
+            eval, _ = minimax(l, depth - 1, alpha, beta, False, colour, our_colour)
             if eval > max_eval:
                 max_eval = eval
                 max_action = a
+
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
         return max_eval, max_action
     else:
         min_eval = 13
         min_action = None
-        action_layout_dict = generate_all_layouts(layout, colour)
-        for a, l in action_layout_dict.items():
-            eval, _ = minimax(l, depth - 1, True, colour)
+        action_layout_list = generate_all_layouts(layout, colour)
+        for t, a, l in action_layout_list:
+            eval, _ = minimax(l, depth - 1, alpha, beta, True, colour, our_colour)
             if eval < min_eval:
                 min_eval = eval
                 min_action = a
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
         return min_eval, min_action
 
 
 def generate_all_layouts(layout, colour):
-    action_layout_dict = {}
+    action_layout_list = []
 
     for token in layout[colour]:
         destinations = find_adjacent_squares(token, layout, colour)
@@ -195,9 +209,9 @@ def generate_all_layouts(layout, colour):
                     action = ("MOVE", n, (xa, ya), (xb, yb))
                 layout_copy = copy.deepcopy(layout)
                 next_layout = update_layout(action, layout_copy, colour)
-                action_layout_dict[action] = next_layout
+                action_layout_list.append((token, action, next_layout))
 
-    return action_layout_dict
+    return action_layout_list
 
 
 def update_layout(action, layout, colour):

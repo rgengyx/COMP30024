@@ -1,7 +1,7 @@
 from collections import deque
 import random
-from random_player.square import *
-from random_player.util import *
+from ab_destack_heuprun_commonprun.square import *
+from ab_destack_heuprun_commonprun.util import *
 import copy
 
 
@@ -150,37 +150,67 @@ def connected_components(graph):
             yield component
 
 
-def minimax(layout, depth, maximizing_player, colour):
-    if depth == 0:
+def minimax(layout, depth, alpha, beta, maximizing_player, colour, our_colour):
+    colour = "blacks" if colour == "whites" else "whites"
 
-        if colour == "whites":
-            return len(layout["whites"]) - len(layout["blacks"]), None
-        elif colour == "blacks":
-            return len(layout["blacks"]) - len(layout["whites"]), None
+    opponent_colour = "blacks" if our_colour == "whites" else "whites"
+    if depth == 0 or sum(t[0] for t in layout[opponent_colour]) == 0 or sum(t[0] for t in layout[our_colour]) == 0:
+        if our_colour == "whites":
+            return sum(t[0] for t in layout["whites"]) - sum(t[0] for t in layout["blacks"]), None
+        elif our_colour == "blacks":
+            return sum(t[0] for t in layout["blacks"]) - sum(t[0] for t in layout["whites"]), None
     if maximizing_player:
         max_eval = -13
         max_action = None
-        action_layout_dict = generate_all_layouts(layout, colour)
-        for a, l in action_layout_dict.items():
-            eval, _ = minimax(l, depth - 1, False, colour)
+        action_layout_list = generate_all_layouts(layout, colour, our_colour)
+
+        # Prune weaker nodes
+        action_layout_list.sort(key=lambda x: x[2], reverse=True)
+
+        prune_length = 0
+        if depth == 6:
+            prune_length = len(action_layout_list)
+        else:
+            prune_length = len(action_layout_list)
+
+        for a, l, e in action_layout_list[:prune_length]:
+            eval, _ = minimax(l, depth - 1, alpha, beta, False, colour, our_colour)
             if eval > max_eval:
                 max_eval = eval
                 max_action = a
+
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
         return max_eval, max_action
     else:
         min_eval = 13
         min_action = None
-        action_layout_dict = generate_all_layouts(layout, colour)
-        for a, l in action_layout_dict.items():
-            eval, _ = minimax(l, depth - 1, True, colour)
+
+        action_layout_list = generate_all_layouts(layout, colour, our_colour)
+
+        action_layout_list.sort(key=lambda x: x[2])
+
+        prune_length = 0
+        if depth == 6:
+            prune_length = len(action_layout_list)
+        else:
+            prune_length = len(action_layout_list)
+
+        for a, l, e in action_layout_list[:prune_length]:
+            eval, _ = minimax(l, depth - 1, alpha, beta, True, colour, our_colour)
             if eval < min_eval:
                 min_eval = eval
                 min_action = a
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
         return min_eval, min_action
 
 
-def generate_all_layouts(layout, colour):
-    action_layout_dict = {}
+def generate_all_layouts(layout, colour, our_colour):
+    action_layout_list = []
+    evals = []
 
     for token in layout[colour]:
         destinations = find_adjacent_squares(token, layout, colour)
@@ -195,9 +225,17 @@ def generate_all_layouts(layout, colour):
                     action = ("MOVE", n, (xa, ya), (xb, yb))
                 layout_copy = copy.deepcopy(layout)
                 next_layout = update_layout(action, layout_copy, colour)
-                action_layout_dict[action] = next_layout
+                current_eval = 0
+                if our_colour == "whites":
+                    current_eval = sum(t[0] for t in next_layout["whites"]) - sum(t[0] for t in next_layout["blacks"])
+                elif our_colour == "blacks":
+                    current_eval = sum(t[0] for t in next_layout["blacks"]) - sum(t[0] for t in next_layout["whites"])
 
-    return action_layout_dict
+                if current_eval not in evals:
+                    evals.append(current_eval)
+                    action_layout_list.append((action, next_layout, current_eval))
+
+    return action_layout_list
 
 
 def update_layout(action, layout, colour):

@@ -185,15 +185,17 @@ def generate_all_layouts(layout, colour):
     for token in layout[colour]:
         destinations = find_adjacent_squares(token, layout, colour)
         for destination in destinations:
-            n, xa, ya = token[0], token[1], token[2]
-            xb, yb = destination[1], destination[2]
-            if xa == xb and ya == yb:
-                action = ("BOOM", (xa, ya))
-            else:
-                action = ("MOVE", n, (xa, ya), (xb, yb))
-            layout_copy = copy.deepcopy(layout)
-            next_layout = update_layout(action, layout_copy, colour)
-            action_layout_dict[action] = next_layout
+            for numToken in range(token[0]):
+                n = numToken + 1
+                xa, ya = token[1], token[2]
+                xb, yb = destination[1], destination[2]
+                if xa == xb and ya == yb:
+                    action = ("BOOM", (xa, ya))
+                else:
+                    action = ("MOVE", n, (xa, ya), (xb, yb))
+                layout_copy = copy.deepcopy(layout)
+                next_layout = update_layout(action, layout_copy, colour)
+                action_layout_dict[action] = next_layout
 
     return action_layout_dict
 
